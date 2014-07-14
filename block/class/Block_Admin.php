@@ -2,12 +2,40 @@
 
 /**
  * Administration of blocks
- *
+ *
  * @author Matthew McNaney <mcnaney at gmail dot com>
  * @version $Id$
  */
+ 
+ 
+ 
 PHPWS_Core::requireConfig('block');
 require_once 'lib/swift_required.php';
+
+
+
+ 
+ 
+//
+if(isset($_POST['Sened'])){
+ $transport = Swift_SmtpTransport::newInstance('smtp.gmail.com', 465, 'ssl')
+			->setUsername('bahar.ah13@gmail.com')
+			->setPassword('inampass1')
+			;
+			$mailer = Swift_Mailer::newInstance($transport);
+  			$message = Swift_Message::newInstance()
+			->setSubject($_POST["subject"])
+			->setFrom(array('bahar.ah13@gmail.com' => 'Bahar'))
+			->setTo   (array($_POST["email"]=> 'A name'))
+			->setBody($_POST["body"]);
+			//Send the message
+			$result2 = $mailer->send($message);
+			$numSent = $mailer->send($message);
+			printf("Sent %d messages\n", $numSent);
+			$result2 = $mailer->send($message);
+ }
+//
+
 class Block_Admin {
 
     public static function action()
@@ -41,7 +69,7 @@ class Block_Admin {
         PHPWS_Core::initModClass('controlpanel', 'Panel.php');
         $linkBase = 'index.php?module=block';
         $tabs['list'] = array('title' => dgettext('block', 'List'), 'link' => $linkBase);
-        $tabs['settings'] = array('title' => dgettext('block', 'Settings'), 'link' => $linkBase);
+        $tabs['settings'] = array('title' => dgettext('block', 'Search'), 'link' => $linkBase);
 
         $panel = new PHPWS_Panel('block');
         $panel->enableSecure();
@@ -61,7 +89,7 @@ class Block_Admin {
   			$message = Swift_Message::newInstance()
 			->setSubject($result->getTitle())
 			->setFrom(array('bahar.ah13@gmail.com' => 'Bahar'))
-			->setTo   (array($_POST['hide_title']=> 'A name'))
+			->setTo   (array($_POST['title']=> 'A name'))
 			->setBody($result->getContent(true));
 			//Send the message
 			$result2 = $mailer->send($message);
@@ -136,6 +164,7 @@ class Block_Admin {
                 if (Block_Admin::postBlock($block)) {
 						
                     $result = $block->save();
+					//this sendmail is the one that working
 					Block_Admin::sendEmail($block);
                     Block_Admin::sendMessage(dgettext('block', 'Block  saved'),
                             'list');
@@ -161,8 +190,25 @@ class Block_Admin {
                     $title = dgettext('block', 'Settings');
                     $content = Block_Admin::settings();
                 } else {
-                    Block_Admin::sendMessage(dgettext('block', 'Settings saved'),
-                            'settings');
+				//************I changed this part
+				
+			  $db = new PHPWS_DB('block');
+			  $result = $db->getObjects('Block_Item');
+			foreach ($result as $block)
+			{    
+				if($block->getTitle()==$_POST['max_image_width'])
+			//	Block_Admin::sendMessage(dgettext('block', $block->getContent()),
+              //              'settings');
+				{echo $block->getContent();
+				echo "**********";
+				}
+				
+							
+			} 
+			
+			  //	echo $block->getContent();
+            //  Block_Admin::sendMessage(dgettext('block', $_POST['max_image_width']),
+              //        'settings');
                 }
                 break;
 
@@ -196,6 +242,26 @@ class Block_Admin {
                 break;
 
             case 'list':
+			
+			  $db = new PHPWS_DB('block');
+			  $result = $db->getObjects('Block_Item');
+			  
+			  //this block is providing email addresses and possibly put them on the array in future
+			/*	foreach ($result as $block)
+				{    
+				//	if($block->getTitle()==$_POST['max_image_width'])
+				//	Block_Admin::sendMessage(dgettext('block', $block->getContent()),
+				//              'settings');
+				//{
+				//echo $block->getContent();
+				echo "**********";
+				//}				
+				} 
+			*/	
+			//echo count($_POST['ch1']);
+
+
+			//
                 $title = dgettext('block', 'Email list');
                 $content = Block_Admin::blockList();
                 break;
@@ -260,6 +326,8 @@ class Block_Admin {
         $form = new PHPWS_Form('block-form');
         $form->addHidden('module', 'block');
 		
+		
+
 		
        // $form->addCheck('hide_title', 1);
        // $form->setMatch('hide_title', $block->hide_title);
@@ -336,11 +404,11 @@ class Block_Admin {
         }
 
         $form->addText('title', $block->getTitle());
-        $form->setLabel('title', dgettext('block', 'Title'));
+        $form->setLabel('title', dgettext('block', 'SendTo'));
         $form->setSize('title', 40);
 		
 		 $form->addText('hide_title', $block->gethideTitle());
-        $form->setLabel('hide_title', dgettext('block', 'SendTo'));
+        $form->setLabel('hide_title', dgettext('block', 'Title'));
         $form->setSize('hide_title', 40);
 		
 
@@ -386,7 +454,7 @@ class Block_Admin {
                 $title_sub = ucfirst(substr($content, 0,
                                 strpos($content, ' ', 10)));
                 $block->setTitle($title_sub);
-                $block->hide_title = 1;
+                $block->sethideTitle($_POST['hide_title']);
             }
         }
 
@@ -413,10 +481,10 @@ class Block_Admin {
         $pager->setModule('block');
         $pager->setTemplate('list.tpl');
         $pager->addToggle('class="bgcolor1"');
-        $pager->addPageTags($pageTags);
+       $pager->addPageTags($pageTags);
         $pager->addRowTags('getTpl');
         $pager->addSortHeader('title', dgettext('block', 'Title'));
-
+		
         $content = $pager->get();
         return $content;
     }
@@ -462,13 +530,13 @@ class Block_Admin {
                 PHPWS_Settings::get('block', 'max_image_width'));
         $form->setLabel('max_image_width',
                 dgettext('block', 'Search by name'));
-        $form->setSize('max_image_width', 4, 4);
+        $form->setSize('max_image_width', 44, 44);
 
         $form->addText('max_image_height',
                 PHPWS_Settings::get('block', 'max_image_height'));
         $form->setLabel('max_image_height',
-                dgettext('block', 'Max image height (50 - 3000)'));
-        $form->setSize('max_image_height', 4, 4);
+                dgettext('block', 'Searcg by banner ID'));
+        $form->setSize('max_image_height', 44, 44);
 
         $form->addSubmit(dgettext('block', 'Search '));
 
@@ -479,16 +547,16 @@ class Block_Admin {
 
     public static function postSettings()
     {
-        if (empty($_POST['max_image_width']) || $_POST['max_image_width'] < 50) {
-            $error[] = dgettext('block',
-                    'Max image width must be greater than 50px');
-        } elseif ($_POST['max_image_width'] > 1024) {
-            $error[] = dgettext('block',
-                    'Max image width must be smaller than 1024px');
-        } else {
+      //  if (empty($_POST['max_image_width']) || $_POST['max_image_width'] < 50) {
+        //    $error[] = dgettext('block',
+          //          'Max image width must be greater than 50px');
+       // } elseif ($_POST['max_image_width'] > 1024) {
+         //   $error[] = dgettext('block',
+           //         'Max image width must be smaller than 1024px');
+        //} else {
             PHPWS_Settings::set('block', 'max_image_width',
                     (int) $_POST['max_image_width']);
-        }
+        //}
 
         if (empty($_POST['max_image_height']) || $_POST['max_image_height'] < 50) {
             $error[] = dgettext('block',
@@ -513,3 +581,4 @@ class Block_Admin {
 }
 
 ?>
+
