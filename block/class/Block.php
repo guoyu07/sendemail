@@ -13,8 +13,7 @@ class Block {
 
     public static function show()
     {
-        Block::showAllBlocks();
-
+       /*  Block::showAllBlocks();
         $key = Key::getCurrent();
 
         if (empty($key) || $key->isDummy(true)) {
@@ -24,20 +23,35 @@ class Block {
 
         if (isset($_SESSION['Pinned_Blocks'])) {
             Block::viewPinnedBlocks($key);
-        }
+        } */
+//echo "clint";
 
+/*
+$checkboxcount = count($_POST['ch1']);
+if($checkboxcount < 1)
+{
+    echo "clint";
+}
+*/
+		  $db = new PHPWS_DB('block');
+		  $result = $db->getObjects('Block_Item');
+          foreach ($result as $block)
+		  {    
+		  if($block->getTitle()=="title1000")
+          echo $block->getTitle();
+   		 } 
     }
 
     public static function showAllBlocks()
     {
-        $key = new Key;
+        /* $key = new Key;
         $key->id = -1;
-        Block::showBlocks($key);
+        Block::showBlocks($key); */
     }
 
     public static function viewPinnedBlocks($key)
     {
-        if (!isset($_SESSION['Pinned_Blocks'])) {
+       /*  if (!isset($_SESSION['Pinned_Blocks'])) {
             return FALSE;
         }
 
@@ -60,12 +74,12 @@ class Block {
         }
 
         $complete = implode('', $content);
-        Layout::add($complete, 'block', 'Block_List');
+        Layout::add($complete, 'block', 'Block_List'); */
     }
 
     public static function showBlocks($key)
     {
-        $db = new PHPWS_DB('block');
+        /* $db = new PHPWS_DB('block');
         $db->addWhere('block_pinned.key_id', $key->id);
         $db->addWhere('id', 'block_pinned.block_id');
         Key::restrictView($db, 'block');
@@ -84,7 +98,7 @@ class Block {
             $block->setPinKey($key);
             Layout::add($block->view(), 'block', $block->getContentVar());
             $GLOBALS['Current_Blocks'][$block->id] = TRUE;
-        }
+        } */
 
     }
 
